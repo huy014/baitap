@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài Tập Trắc Nghiệm</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f4f6f9; font-family: system-ui, -apple-system, sans-serif; }
+        .quiz-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.06); padding: 20px; margin-bottom: 20px; scroll-margin-top: 85px; }
+        .q-title { font-weight: 600; color: #2c3e50; margin-bottom: 12px; }
+        .opt-img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: .2s; }
+        .form-check-input { border-radius: 50% !important; cursor: pointer; }
+        .form-check-input:checked + label .opt-img { border-color: #0d6efd; box-shadow: 0 0 8px rgba(13,110,253,.4); }
+        .q-nav { position: sticky; top: 10px; z-index: 100; background: #fff; border-radius: 10px; padding: 10px; box-shadow: 0 4px 10px rgba(0,0,0,.08); margin-bottom: 20px; }
+        .nav-btn { width: 36px; height: 36px; border-radius: 50%; font-weight: bold; padding: 0; line-height: 36px; margin: 2px; }
+        .res-img { max-width: 100%; height: 220px; object-fit: cover; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container py-4" style="max-width: 800px;">
+    <div class="text-center mb-3">
+        <h2 class="fw-bold text-primary">BÀI TẬP TRẮC NGHIỆM</h2>
+        <p class="text-muted small">Trả lời 10 câu hỏi để khám phá phong cách của bạn</p>
+    </div>
+
+    <!-- Thanh chuyển câu hỏi nhanh -->
+    <div class="q-nav text-center" id="navPanel">
+        <div class="d-flex flex-wrap justify-content-center" id="navBtns"></div>
+    </div>
+
+    <form id="quizForm">
+        <!-- Các câu hỏi sẽ được load tự động bằng JS bên dưới -->
+        <div id="questionsContainer"></div>
+
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg px-5">Xem Kết Quả</button>
+        </div>
+    </form>
+
+    <!-- Khung kết quả -->
+    <div id="resultBox" class="quiz-card d-none text-center mt-4">
+        <h3 class="text-success fw-bold" id="resTitle"></h3>
+        <img id="resImg" class="res-img my-3 shadow-sm" src="" alt="Result">
+        <p class="text-secondary mx-auto" style="max-width: 600px;" id="resDesc"></p>
+        <button class="btn btn-outline-secondary mt-2" onclick="location.reload()">Làm Lại</button>
+    </div>
+</div>
+
+<script>
+// Dữ liệu 10 câu hỏi tối ưu gọn nhẹ
+const questions = [
+    { type: 'text', title: 'Câu 1: Khi gặp sự cố bất ngờ trong công việc, bạn thường làm gì?', opts: ['Bình tĩnh phân tích nguyên nhân và xử lý ngay.', 'Thảo luận với đồng nghiệp để tìm sự trợ giúp.', 'Sáng tạo hướng đi mới để thay thế.', 'Làm theo quy trình hướng dẫn có sẵn.'] },
+    { type: 'multi', title: 'Câu 2 (Chọn nhiều): Hoạt động giúp bạn nạp lại năng lượng?', opts: ['Đọc sách, nghe nhạc, ở một mình.', 'Đi cà phê, tụ tập bạn bè.', 'Vẽ tranh, sáng tạo nội dung.', 'Chơi thể thao, dã ngoại ngoài trời.'] },
+    { type: 'img', title: 'Câu 3: Chọn không gian làm việc bạn thích nhất:', opts: ['Hiện đại & Gọn gàng', 'Ấm cúng & Gần gũi', 'Sáng tạo & Trực quan', 'Tự do & Mở rộng'], imgs: ['https://images.unsplash.com/photo-1497366216548-37526070297c?w=300', 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=300', 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=300', 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=300'] },
+    { type: 'text', title: 'Câu 4: Bạn ra quyết định quan trọng dựa trên điều gì?', opts: ['Dữ liệu thực tế và logic.', 'Cảm xúc và sự ảnh hưởng đến người khác.', 'Trực giác và sự đột phá.', 'Kinh nghiệm và sự an toàn.'] },
+    { type: 'text', title: 'Câu 5: Vai trò của bạn trong làm việc nhóm?', opts: ['Quản lý tiến độ và lập kế hoạch.', 'Kết nối, giữ không khí vui vẻ.', 'Đưa ra các ý tưởng mới lạ.', 'Thực thi cẩn thận chi tiết.'] },
+    { type: 'img', title: 'Câu 6: Phong cách du lịch bạn yêu thích:', opts: ['Đô thị sầm uất', 'Biển nghỉ dưỡng', 'Phượt trải nghiệm', 'Leo núi mạo hiểm'], imgs: ['https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=300', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300', 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=300', 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=300'] },
+    { type: 'multi', title: 'Câu 7 (Chọn nhiều): Kỹ năng bạn tự tin nhất?', opts: ['Tư duy phản biện, giải quyết vấn đề.', 'Giao tiếp, lắng nghe thấu hiểu.', 'Sáng tạo, thẩm mỹ.', 'Quản lý thời gian, kỷ luật.'] },
+    { type: 'text', title: 'Câu 8: Thể loại phim yêu thích của bạn?', opts: ['Trinh thám, viễn tưởng.', 'Tình cảm, gia đình.', 'Huyền ảo, hoạt hình nghệ thuật.', 'Hành động, phiêu lưu.'] },
+    { type: 'text', title: 'Câu 9: Mọi người nhận xét bạn là người như thế nào?', opts: ['Thực tế, đáng tin cậy.', 'Thân thiện, hay giúp đỡ.', 'Độc đáo, nhiều ý tưởng.', 'Năng động, không ngại thử thách.'] },
+    { type: 'text', title: 'Câu 10: Mục tiêu lớn nhất của bạn?', opts: ['Khẳng định giá trị bản thân.', 'Cuộc sống bình yên, hạnh phúc.', 'Tạo tác phẩm/dự án dấu ấn riêng.', 'Khám phá và trải nghiệm thế giới.'] }
+];
+
+const results = {
+    A: { title: "Nhóm Tính Cách: Nhà Phân Tích & Chiến Lược", img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600", desc: "Bạn sở hữu tư duy logic mạch lạc, sắc bén. Bạn luôn giữ sự bình tĩnh để đưa ra giải pháp tối ưu nhất cho mọi vấn đề." },
+    B: { title: "Nhóm Tính Cách: Người Kết Nối & Thấu Hiểu", img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600", desc: "Bạn giàu trí tuệ cảm xúc (EQ), luôn lắng nghe và mang lại năng lượng tích cực cho mọi người xung quanh." },
+    C: { title: "Nhóm Tính Cách: Nhà Sáng Tạo & Đột Phá", img: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600", desc: "Tâm hồn bạn tràn ngập ý tưởng độc đáo. Bạn luôn tự do thể hiện cá tính riêng và đem lại nhiều góc nhìn mới mẻ." },
+    D: { title: "Nhóm Tính Cách: Nhà Khám Phá & Hành Động", img: "https://images.unsplash.com/photo-1527631746610-bca00a040d60?w=600", desc: "Bạn năng động, tràn đầy tinh thần trải nghiệm, thích đối mặt với thử thách thực tế và thích ứng cực nhanh." }
+};
+
+// Render giao diện câu hỏi và nút điều hướng
+const container = document.getElementById('questionsContainer');
+const navBtns = document.getElementById('navBtns');
+const keys = ['A', 'B', 'C', 'D'];
+
+questions.forEach((q, idx) => {
+    const id = idx + 1;
+    // Nút nav
+    navBtns.innerHTML += `<a href="#q_${id}" class="btn btn-outline-primary nav-btn">${id}</a>`;
+    
+    // Tạo ô câu hỏi
+    let html = `<div class="quiz-card" id="q_${id}"><h5 class="q-title">${q.title}</h5>`;
+    
+    if (q.type === 'img') {
+        html += `<div class="row g-2">`;
+        q.opts.forEach((opt, i) => {
+            html += `
+            <div class="col-6 col-md-3">
+                <input type="radio" class="form-check-input d-none" name="q${id}" id="q${id}_${i}" value="${keys[i]}" required>
+                <label for="q${id}_${i}" class="w-100 text-center">
+                    <img src="${q.imgs[i]}" class="opt-img" alt="img">
+                    <div class="small fw-bold mt-1">${opt}</div>
+                </label>
+            </div>`;
+        });
+        html += `</div>`;
+    } else {
+        const inputType = q.type === 'multi' ? 'checkbox' : 'radio';
+        const req = q.type === 'multi' ? '' : 'required';
+        q.opts.forEach((opt, i) => {
+            html += `
+            <div class="form-check mb-2">
+                <input class="form-check-input ${q.type === 'multi' ? 'cb-q'+id : ''}" type="${inputType}" name="q${id}" id="q${id}_${i}" value="${keys[i]}" ${req}>
+                <label class="form-check-label" for="q${id}_${i}">${opt}</label>
+            </div>`;
+        });
+    }
+    html += `</div>`;
+    container.innerHTML += html;
+});
+
+// Xử lý nộp bài
+document.getElementById('quizForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Valid Checkbox (Câu 2 và 7)
+    if (!document.querySelectorAll('.cb-q2:checked').length || !document.querySelectorAll('.cb-q7:checked').length) {
+        alert("Vui lòng chọn ít nhất 1 đáp án cho Câu 2 và Câu 7!");
+        return;
+    }
+
+    // Tính điểm
+    const scores = { A: 0, B: 0, C: 0, D: 0 };
+    new FormData(this).forEach(val => { if (scores[val] !== undefined) scores[val]++; });
+
+    // Tìm điểm cao nhất
+    const topKey = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+    const res = results[topKey];
+
+    // Hiển thị kết quả
+    document.getElementById('resTitle').innerText = res.title;
+    document.getElementById('resImg').src = res.img;
+    document.getElementById('resDesc').innerText = res.desc;
+
+    document.getElementById('quizForm').classList.add('d-none');
+    document.getElementById('navPanel').classList.add('d-none');
+    document.getElementById('resultBox').classList.remove('d-none');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+</script>
+</body>
+</html>
